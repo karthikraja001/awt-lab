@@ -36,7 +36,7 @@ class _Ex16HomePageState extends State<Ex16HomePage> {
           autoPlay: true,
           autoPlayInterval: Duration(seconds: 5),
           height: MediaQuery.of(context).size.height * 0.88),
-        items: ["Welcome", "Introduction", "Explaination", "Conclusion", "End"].map((i) {
+        items: ["Welcome", "Introduction", "Explanation", "Conclusion", "End"].map((i) {
           return Builder(
             builder: (BuildContext context) {
               return Container(

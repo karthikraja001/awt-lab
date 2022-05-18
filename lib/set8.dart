@@ -1,5 +1,6 @@
-// ignore_for_file: prefer_const_constructors
+// ignore_for_file: prefer_const_constructors, sized_box_for_whitespace
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' show cos, sqrt, asin;
 
@@ -10,6 +11,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart';
 import 'package:latlong2/latlong.dart' as latLng;
 import 'package:mapbox_search/mapbox_search.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Ex17HomePage extends StatefulWidget {
   const Ex17HomePage({ Key? key }) : super(key: key);
@@ -79,7 +81,7 @@ class _Ex17HomePageState extends State<Ex17HomePage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text("Exercise 18",style: TextStyle(color: Colors.black),),
+        title: Text("Exercise 17",style: TextStyle(color: Colors.black),),
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.transparent,
         shadowColor: Colors.transparent,
@@ -538,6 +540,76 @@ class Ex18HomePage extends StatefulWidget {
 }
 
 class _Ex18HomePageState extends State<Ex18HomePage> {
+
+  String distance = '';
+
+  @override
+  void initState() {
+    super.initState();
+    timer = Timer.periodic(Duration(seconds: 5), (Timer t) => changeLocation());
+  }
+
+  @override
+  void dispose(){
+    timer.cancel();
+    super.dispose();
+  }
+
+  late Timer timer;
+  List<double> location = [0,0];
+
+  Future<void> changeLocation() async{
+    await GeolocatorPlatform.instance.getCurrentPosition().then((value){
+      setState(() {
+        location[0] = (value.latitude);
+        location[1] = (value.longitude);
+      });
+      calculateDistance(value.latitude, value.longitude);
+    });
+  }
+
+  Future<void> setProximityLocation(double latitude, double longitude) async{
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setDouble('latitude', latitude);
+    prefs.setDouble('longitude', longitude);
+    prefs.setBool('proximity', true);
+    setState(() {
+      proximityAlert = false;
+    });
+    print(latitude);
+    print(longitude);
+  }
+
+  Future<void> unsetProximityLocation() async{
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.remove('latitude');
+    prefs.remove('longitude');
+    prefs.remove('proximity');
+  }
+
+  bool proximityAlert = false;
+
+  Future<void> calculateDistance(double latitude, double longitude) async{
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    double? lat = prefs.getDouble('latitude');
+    double? lon = prefs.getDouble('longitude');
+    var p = 0.017453292519943295;
+    var c = cos;
+    var a = 0.5 - c((latitude - lat!) * p)/2 + c(lat * p) * c(lat * p) * (1 - c((longitude - lon!) * p))/2;
+    double temp = 0;
+    setState(() {
+      temp = ((12742 * asin(sqrt(a))) * 100000);
+      distance = ((12742 * asin(sqrt(a))) * 100000).toString() + " CM";
+    });
+    if(temp >= 1000 ){
+      setState(() {
+        proximityAlert = true;
+      });
+    }
+  }
+
+  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -554,6 +626,64 @@ class _Ex18HomePageState extends State<Ex18HomePage> {
             color: Colors.black,
           ),
         ),
+      ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+            Center(
+              child: GestureDetector(
+                onTap: () async{
+                  await GeolocatorPlatform.instance.getCurrentPosition().then((value){
+                    setProximityLocation(value.latitude, value.longitude);
+                  });
+                  // var x = calculateDistance(latLon1[0], latLon1[1], latLon2[0], latLon2[1]);
+                  // setState(() {
+                  //   totalDistance = x.toStringAsFixed(2);
+                  // });
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                  decoration: BoxDecoration(
+                    color: Colors.blueAccent,
+                    // ignore: prefer_const_literals_to_create_immutables
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.shade400,
+                        offset: Offset(1,2.5)
+                      )
+                    ],
+                    borderRadius: BorderRadius.circular(5)
+                  ),
+                  child: Text(
+                    'Fix Position',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 100,),
+            Text(
+              'Distance:\t\t\t' + distance + " "
+            ),
+            Visibility(
+              visible: !proximityAlert,
+              child: Container(),
+              replacement: Container(
+                height: 100,
+                child: Text(
+                  '\n\n\n\nAlert!! Moved more than 10Meters',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold
+                  ),
+                ),
+              ),
+            )
+        ],
       ),
     );
   }

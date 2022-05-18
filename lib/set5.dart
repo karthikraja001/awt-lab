@@ -92,6 +92,7 @@ class _Ex11HomePageState extends State<Ex11HomePage> {
                   typedPassword = value;
                 });
               },
+              obscureText: true,
               decoration: InputDecoration(
                 hintText: "Password",
                 border: OutlineInputBorder(
@@ -106,12 +107,14 @@ class _Ex11HomePageState extends State<Ex11HomePage> {
               onPressed: (){
                 var index = username.indexWhere((element) => element == typedUsername);
                 if(password[index] == typedPassword){
-                  print(password[index]);
-                  print("Login Successful");
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Login Successful'))
+                  );
                 }
                 else{
-                  print(password[index]);
-                  print("Login Failed");
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Login Failed'))
+                  );
                 }
               },
               child: Text("Login"),
@@ -195,20 +198,14 @@ class _Ex13HomePageState extends State<Ex13HomePage> {
 
   Future<void> fetchContacts() async{
     if (await FlutterContacts.requestPermission()) {
-      // Get all contacts (lightly fetched)
-      List<Contact> contacts = await FlutterContacts.getContacts();
+      var temp = await FlutterContacts.getContacts();
       setState(() {
         isLoaded = true;
+        contacts = temp;
       });
       print(contacts);
       print('yup');
-
-      // // Get all contacts (fully fetched)
-      // contacts = await FlutterContacts.getContacts(
-      //     withProperties: true, withPhoto: true);
-
-      // // Get contact with specific ID (fully fetched)
-      // Contact? contact = await FlutterContacts.getContact(contacts.first.id);
+      print(isLoaded);
     }
   }
 
@@ -238,11 +235,16 @@ class _Ex13HomePageState extends State<Ex13HomePage> {
       body: isLoaded ? SingleChildScrollView(
         child: Column(
           children: [
+            Container(
+              height: 20,
+              width: 20,
+              color: Colors.white
+            ),
             SizedBox(
               height: MediaQuery.of(context).size.height * 0.99,
               child: ListView.builder(
                 shrinkWrap: true,
-                itemCount: isLoaded ? contacts.length : 0,
+                itemCount: isLoaded ? contacts.length : 1,
                 itemBuilder: (context, index){
                   return ListTile(
                     leading: CircleAvatar(
